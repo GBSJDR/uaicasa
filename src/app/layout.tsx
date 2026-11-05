@@ -13,7 +13,6 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'UaiCasa — São João del-Rei/MG',
     description: 'Temporada e eventos com piscina, churrasqueira e vista para a serra.',
-    images: ['/fotos/fachada-piscina.jpg'],
     locale: 'pt_BR',
     type: 'website',
   },

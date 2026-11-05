@@ -6,8 +6,12 @@ export const waHref = (text = 'Olá! Vim pelo site da UaiCasa e gostaria de mais
 
 export function Logo({ light = false }: { light?: boolean }) {
   return (
-    <span className={`font-display text-2xl font-semibold tracking-tight ${light ? 'text-white' : 'text-serra-escuro'}`}>
-      Uai<span className="text-terra">Casa</span>
+    <span className="flex items-center gap-2">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/brand/uaicasa-simbolo.svg" alt="" width={36} height={36} className="h-9 w-9" />
+      <span className={`font-display text-2xl font-semibold tracking-tight ${light ? 'text-white' : 'text-serra-escuro'}`}>
+        Uai<span className={light ? 'text-[#e08a5f]' : 'text-terra'}>Casa</span>
+      </span>
     </span>
   );
 }
