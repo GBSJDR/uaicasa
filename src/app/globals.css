@@ -1,0 +1,43 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-creme: #faf6ef;
+  --color-areia: #efe6d6;
+  --color-pedra: #c9b89c;
+  --color-terra: #b4532a;
+  --color-terra-escuro: #8f3f1e;
+  --color-serra: #2f5d50;
+  --color-serra-escuro: #1f4037;
+  --color-piscina: #3fb8c9;
+  --color-tinta: #1f2a24;
+  --color-musgo: #5b6b60;
+
+  --font-display: var(--font-fraunces), Georgia, serif;
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-creme);
+  color: var(--color-tinta);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* textura sutil de pedra mineira */
+.bg-pedra-textura {
+  background-color: var(--color-areia);
+  background-image: radial-gradient(rgba(143, 63, 30, 0.06) 1px, transparent 1px);
+  background-size: 14px 14px;
+}
+
+@utility focus-ring {
+  outline: 2px solid transparent;
+  &:focus-visible {
+    outline: 2px solid var(--color-terra);
+    outline-offset: 2px;
+  }
+}
