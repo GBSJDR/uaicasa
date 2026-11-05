@@ -75,8 +75,12 @@ export async function POST(req: Request) {
     });
     if (error) {
       const taken = error.message.includes('DATES_UNAVAILABLE');
+      if (!taken) console.error('create_booking falhou', error);
       return NextResponse.json(
-        { error: taken ? 'Alguém acabou de reservar estas datas. Escolha outro período.' : 'Erro ao criar a reserva.' },
+        {
+          error: taken ? 'Alguém acabou de reservar estas datas. Escolha outro período.' : 'Erro ao criar a reserva.',
+          code: taken ? undefined : error.code, // código técnico p/ suporte (sem detalhes do banco)
+        },
         { status: taken ? 409 : 500 },
       );
     }
