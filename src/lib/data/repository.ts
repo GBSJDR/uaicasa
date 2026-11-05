@@ -8,6 +8,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { todayInSaoPaulo } from '../domain/dates';
 import type { DateOverride, Hold, PricingContext, PricingRule } from '../domain/types';
 import { OVERRIDES, PROPERTY, RULES, demoHolds } from './demo';
+import { parseDateRange, parseTstzRange } from './pgRange';
 
 let client: SupabaseClient | null = null;
 
@@ -20,12 +21,6 @@ export function supabaseAdmin(): SupabaseClient | null {
 }
 
 export const isDemoMode = () => supabaseAdmin() === null;
-
-const parseRange = (r: string) => {
-  // tstzrange vem como '["2027-01-10 17:00:00+00","2027-01-12 17:00:00+00")'
-  const [a, b] = r.slice(1, -1).split(',').map((s) => s.replaceAll('"', '').trim());
-  return { start: Date.parse(a.replace(' ', 'T')), end: Date.parse(b.replace(' ', 'T')) };
-};
 
 export async function loadPricingContext(slug = 'uaicasa'): Promise<PricingContext> {
   const db = supabaseAdmin();
@@ -70,7 +65,7 @@ export async function loadPricingContext(slug = 'uaicasa'): Promise<PricingConte
     },
     rules: { stay: toRule(latest('stay')), event: toRule(latest('event')) },
     overrides: (overrides.data ?? []).map((o): DateOverride => {
-      const [from, to] = (o.dates as string).slice(1, -1).split(',');
+      const { from, to } = parseDateRange(o.dates);
       return {
         label: o.label, scope: o.scope, from, to,
         priceCents: o.price_cents, priceMultiplier: o.price_multiplier && Number(o.price_multiplier),
@@ -78,6 +73,6 @@ export async function loadPricingContext(slug = 'uaicasa'): Promise<PricingConte
         eventsAllowed: o.events_allowed, priority: o.priority,
       };
     }),
-    holds: (occupancy.data ?? []).map((o): Hold => ({ ...parseRange(o.period), kind: o.kind, label: o.reason ?? undefined })),
+    holds: (occupancy.data ?? []).map((o): Hold => ({ ...parseTstzRange(o.period), kind: o.kind, label: o.reason ?? undefined })),
   };
 }

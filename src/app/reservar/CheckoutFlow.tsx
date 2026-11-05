@@ -13,9 +13,10 @@ import type { Quote } from '@/lib/domain/types';
 
 interface BookingResult {
   demo: boolean;
+  manualPayment: boolean;
   booking: { id: string; code: string; expiresAt: string };
   contract: { version: string; sha256: string };
-  pix: { qrCodeBase64: string | null; copyPaste: string; expiresAt: string };
+  pix: { qrCodeBase64: string | null; copyPaste: string; expiresAt: string } | null;
   quote: Quote;
 }
 
@@ -152,7 +153,24 @@ export default function CheckoutFlow({ params }: { params: Record<string, string
     return (
       <div className="grid gap-8 lg:grid-cols-[1.3fr_1fr]">
         <section className="rounded-3xl bg-white p-6 ring-1 ring-areia sm:p-8">
-          {paid ? (
+          {result.manualPayment ? (
+            <div className="text-center">
+              <p className="text-5xl">🏡</p>
+              <h1 className="mt-3 font-display text-3xl text-serra-escuro">Reserva pré-agendada!</h1>
+              <p className="mt-2 text-musgo">
+                Código <strong>{result.booking.code}</strong>. Suas datas estão seguradas por 24 horas. Envie a mensagem abaixo e
+                o anfitrião te manda o PIX de <strong>{brl(result.quote.amountDueNowCents)}</strong> pelo WhatsApp.
+              </p>
+              <a
+                href={waHref(`Olá! Fiz a pré-reserva ${result.booking.code} na UaiCasa (${when}, ${quote.guests} pessoas). Pode me enviar o PIX do sinal de ${brl(result.quote.amountDueNowCents)}?`)}
+                target="_blank" rel="noopener"
+                className="mt-6 inline-block rounded-xl bg-emerald-600 px-6 py-3 font-semibold text-white"
+              >
+                Pedir o PIX no WhatsApp
+              </a>
+              <p className="mt-6 text-[11px] text-musgo">Contrato {result.contract.version} aceito • SHA-256 {result.contract.sha256.slice(0, 16)}…</p>
+            </div>
+          ) : !result.pix ? null : paid ? (
             <div className="text-center">
               <p className="text-5xl">🎉</p>
               <h1 className="mt-3 font-display text-3xl text-serra-escuro">Reserva confirmada!</h1>
@@ -169,9 +187,9 @@ export default function CheckoutFlow({ params }: { params: Record<string, string
                 {new Date(result.booking.expiresAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
               </p>
               <div className="mt-6 flex flex-col items-center gap-4 sm:flex-row sm:items-start">
-                {result.pix.qrCodeBase64 ? (
+                {result.pix?.qrCodeBase64 ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={`data:image/png;base64,${result.pix.qrCodeBase64}`} alt="QR Code PIX" className="h-52 w-52 rounded-xl ring-1 ring-areia" />
+                  <img src={`data:image/png;base64,${result.pix?.qrCodeBase64}`} alt="QR Code PIX" className="h-52 w-52 rounded-xl ring-1 ring-areia" />
                 ) : (
                   <div className="grid h-52 w-52 shrink-0 place-items-center rounded-xl bg-areia p-4 text-center text-xs text-musgo">
                     QR Code de demonstração<br />(configure ASAAS_API_KEY)
@@ -180,8 +198,8 @@ export default function CheckoutFlow({ params }: { params: Record<string, string
                 <div className="w-full">
                   <p className="font-display text-3xl">{brl(result.quote.amountDueNowCents)}</p>
                   <p className="mt-3 text-xs font-medium text-musgo">PIX copia e cola</p>
-                  <div className="mt-1 break-all rounded-xl bg-creme p-3 font-mono text-[11px] text-musgo">{result.pix.copyPaste}</div>
-                  <button onClick={() => navigator.clipboard.writeText(result.pix.copyPaste)} className="focus-ring mt-3 w-full rounded-xl bg-serra px-4 py-3 font-semibold text-white hover:bg-serra-escuro">
+                  <div className="mt-1 break-all rounded-xl bg-creme p-3 font-mono text-[11px] text-musgo">{result.pix?.copyPaste}</div>
+                  <button onClick={() => navigator.clipboard.writeText(result.pix?.copyPaste ?? "")} className="focus-ring mt-3 w-full rounded-xl bg-serra px-4 py-3 font-semibold text-white hover:bg-serra-escuro">
                     Copiar código PIX
                   </button>
                   <p className="mt-3 text-xs text-musgo">A confirmação é automática assim que o banco avisar o pagamento — você recebe o contrato por e-mail e WhatsApp.</p>

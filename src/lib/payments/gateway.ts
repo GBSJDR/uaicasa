@@ -141,6 +141,8 @@ class MockGateway implements PaymentGateway {
   }
 }
 
+export const hasRealGateway = () => !!process.env.ASAAS_API_KEY;
+
 export function paymentGateway(): PaymentGateway {
   const key = process.env.ASAAS_API_KEY;
   if (!key) return new MockGateway();

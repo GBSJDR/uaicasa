@@ -153,7 +153,7 @@ Airbnb/Booking a cada 30 min para `occupancy(kind='ical_import')`.
 
 ## 7. Para colocar em produção
 
-1. Criar o projeto no Supabase e rodar, no SQL Editor e nesta ordem, `supabase/migrations/0001_init.sql` e `0002_seguranca.sql`.
+1. Criar o projeto no Supabase e rodar, no SQL Editor e nesta ordem, `supabase/migrations/0001_init.sql`, `0002_seguranca.sql` e `0003_contratos_e_expiracao.sql`.
 2. Criar seu usuário no Auth e inserir em `admin_users`. Proteger `/admin` com middleware.
 3. Cadastrar `contract_templates` (um por modalidade).
 4. Conta Asaas (sandbox primeiro) → chave de API + webhook apontando para `https://uaicasa.com.br/api/webhooks/payments`.

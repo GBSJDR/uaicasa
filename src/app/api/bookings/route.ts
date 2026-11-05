@@ -11,9 +11,11 @@ import { isDemoMode, loadPricingContext, supabaseAdmin } from '@/lib/data/reposi
 import { quote } from '@/lib/domain/pricing';
 import { isValidCNPJ, isValidCPF, onlyDigits, parseBookingRequest } from '@/lib/domain/validation';
 import { buildContract, contractToText } from '@/lib/contracts/contract';
-import { paymentGateway } from '@/lib/payments/gateway';
+import { hasRealGateway, paymentGateway } from '@/lib/payments/gateway';
 
 const HOLD_MINUTES = 30;
+/** Sem gateway, o PIX é enviado manualmente pelo WhatsApp: segura a data por mais tempo. */
+const MANUAL_HOLD_HOURS = 24;
 
 export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
@@ -96,6 +98,20 @@ export async function POST(req: Request) {
   }
 
   // --- 4. PIX ---
+  // Banco real sem Asaas configurado → pagamento manual (anfitrião envia o PIX pelo WhatsApp).
+  if (db && !hasRealGateway()) {
+    const manualExpires = new Date(Date.now() + MANUAL_HOLD_HOURS * 3_600_000);
+    await db.from('bookings').update({ expires_at: manualExpires.toISOString() }).eq('id', bookingId);
+    return NextResponse.json({
+      demo: false,
+      manualPayment: true,
+      booking: { id: bookingId, code: bookingCode, expiresAt: manualExpires.toISOString() },
+      contract: { version: contract.version, sha256: contractHash },
+      pix: null,
+      quote: q,
+    });
+  }
+
   const pix = await paymentGateway().createPixCharge({
     bookingId, bookingCode, amountCents: q.amountDueNowCents, expiresAt,
     description: `UaiCasa • Reserva ${bookingCode} • sinal`,
@@ -103,13 +119,14 @@ export async function POST(req: Request) {
   });
   if (db)
     await db.from('payments').insert({
-      booking_id: bookingId, purpose: 'booking', method: 'pix', gateway: pix.gateway === 'mock' ? 'manual' : pix.gateway,
+      booking_id: bookingId, purpose: 'booking', method: 'pix', gateway: pix.gateway,
       gateway_payment_id: pix.gatewayPaymentId, amount_cents: q.amountDueNowCents,
       pix_qr_code_base64: pix.qrCodeBase64, pix_copy_paste: pix.copyPaste, due_at: pix.expiresAt,
     });
 
   return NextResponse.json({
     demo: isDemoMode(),
+    manualPayment: false,
     booking: { id: bookingId, code: bookingCode, expiresAt: expiresAt.toISOString() },
     contract: { version: contract.version, sha256: contractHash },
     pix,
