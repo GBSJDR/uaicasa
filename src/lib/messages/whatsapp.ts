@@ -37,12 +37,12 @@ export function renderTemplate(key: TemplateKey, v: TemplateVars): string {
       return `Oi, ${v.nome}! Passando pra lembrar do saldo de *${v.saldo}* da reserva *${v.codigo}* (${quando}). Posso te enviar o PIX?`;
     case 'checkin':
       return v.modalidade === 'stay'
-        ? `Oi, ${v.nome}! Seu check-in é dia *${v.entrada} a partir das 14h* e o check-out dia *${v.saida} até as 11h*.\n\n🔑 Vamos te receber no portão.\n📶 Wi-Fi: UaiCasa • senha enviada na chegada\n🏊 Piscina: mantenha a cerca de proteção fechada\n🔇 Silêncio das 22h às 8h\n\nBoa estadia!`
+        ? `Oi, ${v.nome}! Seu check-in é dia *${v.entrada} a partir das 14h* e o check-out dia *${v.saida} até as 11h*.\n\n🔑 Vamos te receber no portão.\n📶 Wi-Fi: UaiCasa • senha enviada na chegada\n🏊 Piscina: crianças sempre com um adulto por perto\n🔇 Silêncio das 22h às 8h\n\nBoa estadia!`
         : `Oi, ${v.nome}! Seu evento é dia *${v.entrada}*, com acesso a partir das 10h e encerramento às 22h. 🎉\n\n🔊 Som alto até 22h\n🔥 Carvão e gelo por conta do anfitrião da festa\n🚫 Sem vidro na área da piscina\n\nFaremos a vistoria de entrada com você.`;
     case 'localizacao':
       return `📍 *UaiCasa*\n${ADDRESS}\n\n${MAPS_URL}\n\nReferência: subindo a Colônia do Marçal, a casa com o muro de pedra e os ciprestes.`;
     case 'guia':
-      return `📖 *Guia da UaiCasa*\n\n🏊 Piscina com cerca de proteção infantil\n🍖 Espaço gourmet com churrasqueira, pia e forno\n⚽ Campo gramado com gol\n🤸 Cama elástica, casinha de madeira com rede de escalada e pebolim\n☀️ Energia solar\n\nPerto: centro histórico de SJDR, Maria Fumaça para Tiradentes, trilhas da Serra do Lenheiro.`;
+      return `📖 *Guia da UaiCasa*\n\n🏊 Piscina com prainha para as crianças\n🍖 Espaço gourmet com churrasqueira, pia e forno\n⚽ Campo gramado com gol\n🤸 Cama elástica, casinha de madeira com rede de escalada e pebolim\n☀️ Energia solar\n\nPerto: centro histórico de SJDR, Maria Fumaça para Tiradentes, trilhas da Serra do Lenheiro.`;
   }
 }
 

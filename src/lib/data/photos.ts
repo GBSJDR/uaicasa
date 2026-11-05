@@ -20,7 +20,7 @@ export const CATEGORY_LABELS: Record<PhotoCategory | 'todas', string> = {
 export const PHOTOS: Photo[] = [
   { src: '/fotos/fachada-piscina.jpg', alt: 'Fachada da casa com deck de madeira e piscina', categories: ['visao_geral', 'piscina'], w: 3048, h: 1408 },
   { src: '/fotos/visao-geral.jpg', alt: 'Vista do alto: casa, área coberta, piscina e montanhas ao fundo', categories: ['visao_geral'], w: 3048, h: 1408 },
-  { src: '/fotos/piscina.jpg', alt: 'Piscina com cerca de proteção infantil e ciprestes', categories: ['piscina', 'festas'], w: 1600, h: 1200 },
+  { src: '/fotos/piscina.jpg', alt: 'Piscina com prainha, deck e ciprestes', categories: ['piscina', 'festas'], w: 1600, h: 1200 },
   { src: '/fotos/espaco-gourmet.jpg', alt: 'Espaço gourmet com churrasqueira, bancada de granito e muro de pedra', categories: ['festas', 'cozinha'], w: 1448, h: 1086 },
   { src: '/fotos/mesas-cadeiras.jpg', alt: 'Mesas e cadeiras para eventos junto à bancada', categories: ['festas', 'cozinha'], w: 1600, h: 1200 },
   { src: '/fotos/campo-futebol.jpg', alt: 'Campo de futebol gramado com gol', categories: ['piscina', 'festas'], w: 3048, h: 1408 },

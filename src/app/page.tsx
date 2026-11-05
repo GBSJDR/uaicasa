@@ -7,7 +7,7 @@ import { PROPERTY, RULES } from '@/lib/data/demo';
 
 const STAY_FEATURES = [
   ['🛏️', 'Suítes com ar-condicionado', 'Janelas panorâmicas para os ciprestes e a serra'],
-  ['🏊', 'Piscina com cerca infantil', 'Deck de madeira e prainha para as crianças'],
+  ['🏊', 'Piscina ampla', 'Com prainha para as crianças e deck para tomar sol'],
   ['🍖', 'Espaço gourmet', 'Churrasqueira, bancada em granito, pia e forno'],
   ['⚽', 'Campo gramado', 'Com gol e alambrado — pelada garantida'],
   ['🤸', 'Área kids', 'Cama elástica, casinha de madeira e rede de escalada'],
@@ -96,7 +96,7 @@ export default function Home() {
       <section id="eventos" className="bg-serra-escuro py-16 text-white">
         <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 lg:grid-cols-2">
           <div className="relative aspect-[4/3] overflow-hidden rounded-3xl">
-            <Image src="/fotos/espaco-gourmet.jpg" alt="Espaço gourmet com churrasqueira iluminado" fill sizes="(min-width:1024px) 50vw, 100vw" className="object-cover" />
+            <Image src="/fotos/visao-geral.jpg" alt="Área coberta para festas, piscina e vista para as montanhas" fill sizes="(min-width:1024px) 50vw, 100vw" className="object-cover" />
           </div>
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-terra">Festas & eventos</p>
@@ -139,10 +139,15 @@ export default function Home() {
           <div>
             <h2 className="font-display text-3xl text-serra-escuro sm:text-4xl">Onde fica</h2>
             <p className="mt-3 text-lg">Rua João Paulo II, nº 2<br />Colônia do Marçal — São João del-Rei/MG</p>
-            <ul className="mt-6 space-y-2 text-sm text-musgo">
-              <li>🏛️ Centro histórico de São João del-Rei</li>
-              <li>🚂 Maria Fumaça para Tiradentes</li>
-              <li>⛰️ Trilhas da Serra do Lenheiro</li>
+            <p className="mt-2 text-sm text-musgo">
+              Bairro residencial e tranquilo, fora do centro histórico — com vista para as montanhas e fácil acesso de carro.
+            </p>
+            <h3 className="mt-6 font-display text-xl text-serra-escuro">Atrações na região</h3>
+            <ul className="mt-3 space-y-2 text-sm text-musgo">
+              <li>🏛️ Centro histórico de São João del-Rei — igrejas barrocas e museus</li>
+              <li>🚂 Maria Fumaça de São João del-Rei a Tiradentes</li>
+              <li>🏘️ Tiradentes — cidade histórica vizinha</li>
+              <li>⛰️ Trilhas e mirantes da Serra do Lenheiro</li>
             </ul>
             <a href={`https://maps.google.com/?q=${ADDRESS_Q}`} target="_blank" rel="noopener" className="focus-ring mt-6 inline-block rounded-xl bg-serra px-5 py-3 font-medium text-white hover:bg-serra-escuro">
               Abrir no Google Maps

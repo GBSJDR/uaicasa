@@ -1,6 +1,6 @@
 import Link from 'next/link';
 
-export const WHATSAPP = '5532999999999'; // TODO: número oficial
+export const WHATSAPP = (process.env.NEXT_PUBLIC_WHATSAPP ?? '5532999999999').replace(/\D/g, '');
 export const waHref = (text = 'Olá! Vim pelo site da UaiCasa e gostaria de mais informações.') =>
   `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(text)}`;
 

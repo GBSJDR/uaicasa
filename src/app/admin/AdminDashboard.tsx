@@ -1,8 +1,11 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
+import { addExpense, addManualBooking, cancelBooking, registerPayment } from './actions';
+import type { AdminBooking } from '@/lib/admin/data';
 import { Logo } from '@/components/SiteHeader';
-import type { DemoBooking, DemoExpense } from '@/lib/data/demo';
+import type { DemoExpense } from '@/lib/data/demo';
 import { dailyAvailability } from '@/lib/domain/availability';
 import { addDays, formatBR, type ISODate } from '@/lib/domain/dates';
 import { brl } from '@/lib/domain/pricing';
@@ -10,9 +13,11 @@ import type { DateOverride, Hold, PropertyConfig } from '@/lib/domain/types';
 import { TEMPLATE_LABELS, renderTemplate, waLink, type TemplateKey } from '@/lib/messages/whatsapp';
 
 interface Props {
+  live: boolean;
+  userName: string;
   today: ISODate;
   property: PropertyConfig;
-  bookings: DemoBooking[];
+  bookings: AdminBooking[];
   expenses: DemoExpense[];
   holds: Hold[];
   overrides: DateOverride[];
@@ -20,7 +25,10 @@ interface Props {
 
 const TABS = ['Visão geral', 'Reservas', 'Calendário', 'Financeiro', 'Preços'] as const;
 
-const STATUS: Record<DemoBooking['status'], [string, string]> = {
+const STATUS: Record<AdminBooking['status'], [string, string]> = {
+  expired: ['Expirada', 'bg-slate-100 text-slate-500'],
+  checked_in: ['Hospedado', 'bg-sky-100 text-sky-800'],
+  no_show: ['Não compareceu', 'bg-red-100 text-red-700'],
   pending_payment: ['Aguardando PIX', 'bg-amber-100 text-amber-800'],
   confirmed: ['Confirmada', 'bg-emerald-100 text-emerald-800'],
   completed: ['Concluída', 'bg-slate-100 text-slate-700'],
@@ -42,11 +50,23 @@ function Kpi({ label, value, hint, tone = 'serra' }: { label: string; value: str
   );
 }
 
-export default function AdminDashboard({ today, property, bookings: initial, expenses: initialExp, holds, overrides }: Props) {
+export default function AdminDashboard({ live, userName, today, property, bookings: initial, expenses: initialExp, holds, overrides }: Props) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  const [flash, setFlash] = useState<string | null>(null);
+  /** Executa uma ação no servidor (modo real) e recarrega os dados. */
+  const run = (fn: () => Promise<{ ok: boolean; error?: string }>, okMsg: string) =>
+    startTransition(async () => {
+      const r = await fn();
+      setFlash(r.ok ? okMsg : (r as { error: string }).error);
+      if (r.ok) router.refresh();
+    });
   const [tab, setTab] = useState<(typeof TABS)[number]>('Visão geral');
-  const [bookings, setBookings] = useState(initial);
-  const [expenses, setExpenses] = useState(initialExp);
-  const [msgFor, setMsgFor] = useState<DemoBooking | null>(null);
+  const [localBookings, setBookings] = useState(initial);
+  const bookings = live ? initial : localBookings;
+  const [localExpenses, setExpenses] = useState(initialExp);
+  const expenses = live ? initialExp : localExpenses;
+  const [msgFor, setMsgFor] = useState<AdminBooking | null>(null);
   const [tpl, setTpl] = useState<TemplateKey>('confirmacao');
   const [showNew, setShowNew] = useState(false);
 
@@ -59,7 +79,7 @@ export default function AdminDashboard({ today, property, bookings: initial, exp
   const occupancy = Math.round((100 * days30.filter((d) => !d.nightFree).length) / days30.length);
   const receivable = bookings.filter((b) => b.status === 'confirmed').reduce((s, b) => s + b.totalCents - b.paidCents, 0);
 
-  const msgVars = (b: DemoBooking) => ({
+  const msgVars = (b: AdminBooking) => ({
     nome: b.guest.split(' ')[0],
     codigo: b.code,
     modalidade: b.mode,
@@ -88,7 +108,14 @@ export default function AdminDashboard({ today, property, bookings: initial, exp
             <Logo />
             <span className="rounded-full bg-areia px-2 py-0.5 text-xs text-musgo">Painel</span>
           </div>
-          <span className="hidden text-xs text-musgo sm:block">Protótipo • dados de demonstração</span>
+          <div className="flex items-center gap-3 text-xs text-musgo">
+            <span className="hidden sm:block">{live ? `Olá, ${userName.split(' ')[0]}` : 'Protótipo • dados de demonstração'}</span>
+            {live && (
+              <form action="/auth/sair" method="post">
+                <button className="rounded-lg px-2 py-1 ring-1 ring-areia hover:bg-areia">Sair</button>
+              </form>
+            )}
+          </div>
         </div>
         <nav className="mx-auto flex max-w-7xl gap-1 overflow-x-auto px-4">
           {TABS.map((t) => (
@@ -100,6 +127,12 @@ export default function AdminDashboard({ today, property, bookings: initial, exp
       </header>
 
       <main className="mx-auto max-w-7xl space-y-6 px-4 py-6">
+        {flash && (
+          <div className="flex items-center justify-between rounded-xl bg-serra/10 px-4 py-2 text-sm text-serra-escuro">
+            <span>{pending ? 'Salvando…' : flash}</span>
+            <button onClick={() => setFlash(null)} aria-label="Fechar">×</button>
+          </div>
+        )}
         {tab === 'Visão geral' && (
           <>
             <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
@@ -154,24 +187,23 @@ export default function AdminDashboard({ today, property, bookings: initial, exp
                 onSubmit={(e) => {
                   e.preventDefault();
                   const f = new FormData(e.currentTarget);
-                  const mode = f.get('mode') as 'stay' | 'event';
-                  const start = String(f.get('start'));
-                  setBookings((bs) => [
-                    ...bs,
-                    {
-                      code: Math.random().toString(36).slice(2, 10).toUpperCase(), mode, status: 'confirmed',
-                      guest: String(f.get('guest')), phone: String(f.get('phone')), start,
-                      end: mode === 'event' ? start : String(f.get('end')), guests: +String(f.get('guests')),
-                      totalCents: Math.round(+String(f.get('total')) * 100), paidCents: Math.round(+String(f.get('paid')) * 100),
-                      source: 'whatsapp',
-                    },
-                  ]);
+                  const g = (k: string) => String(f.get(k) ?? '');
+                  const mode = g('mode') as 'stay' | 'event';
+                  const input = {
+                    mode, guest: g('guest'), phone: g('phone'), document: g('document'), start: g('start'),
+                    end: mode === 'event' ? g('start') : g('end'), guests: +g('guests'),
+                    totalCents: Math.round(+g('total') * 100), paidCents: Math.round(+g('paid') * 100),
+                  };
+                  if (live) run(() => addManualBooking(input), 'Reserva criada.');
+                  else
+                    setBookings((bs) => [...bs, { ...input, code: Math.random().toString(36).slice(2, 10).toUpperCase(), status: 'confirmed', source: 'whatsapp' }]);
                   setShowNew(false);
                 }}
               >
                 <select name="mode" className="rounded-lg border border-pedra/60 px-2 py-2 text-sm"><option value="stay">Hospedagem</option><option value="event">Evento</option></select>
                 <input name="guest" required placeholder="Nome" className="rounded-lg border border-pedra/60 px-2 py-2 text-sm sm:col-span-2" />
-                <input name="phone" required placeholder="+5532…" className="rounded-lg border border-pedra/60 px-2 py-2 text-sm" />
+                <input name="phone" required placeholder="WhatsApp (32) 9…" className="rounded-lg border border-pedra/60 px-2 py-2 text-sm" />
+                <input name="document" required={live} placeholder="CPF" className="rounded-lg border border-pedra/60 px-2 py-2 text-sm" />
                 <input name="guests" type="number" min={1} required placeholder="Pessoas" className="rounded-lg border border-pedra/60 px-2 py-2 text-sm" />
                 <input name="start" type="date" required className="rounded-lg border border-pedra/60 px-2 py-2 text-sm" />
                 <input name="end" type="date" className="rounded-lg border border-pedra/60 px-2 py-2 text-sm" />
@@ -200,11 +232,26 @@ export default function AdminDashboard({ today, property, bookings: initial, exp
                       <td className="px-4 py-3 text-musgo">{b.source}</td>
                       <td className="px-4 py-3 whitespace-nowrap text-right">
                         <button onClick={() => setMsgFor(b)} className="mr-2 rounded-lg bg-emerald-600 px-2 py-1 text-xs text-white">WhatsApp</button>
-                        {b.status === 'pending_payment' && (
-                          <button onClick={() => setBookings((bs) => bs.map((x) => (x.code === b.code ? { ...x, status: 'confirmed', paidCents: Math.round(x.totalCents / 2) } : x)))} className="mr-2 rounded-lg bg-serra px-2 py-1 text-xs text-white">Dar baixa</button>
+                        {(b.status === 'pending_payment' || (b.status === 'confirmed' && b.paidCents < b.totalCents)) && (
+                          <button
+                            onClick={() => {
+                              const v = prompt(`Valor recebido de ${b.guest} (R$):`, ((b.totalCents - b.paidCents) / 200).toFixed(2));
+                              const cents = Math.round(Number((v ?? '').replace(',', '.')) * 100);
+                              if (!cents) return;
+                              if (live && b.id) run(() => registerPayment(b.id!, cents), 'Pagamento registrado e reserva confirmada.');
+                              else setBookings((bs) => bs.map((x) => (x.code === b.code ? { ...x, status: 'confirmed', paidCents: x.paidCents + cents } : x)));
+                            }}
+                            className="mr-2 rounded-lg bg-serra px-2 py-1 text-xs text-white"
+                          >
+                            Dar baixa
+                          </button>
                         )}
                         {(b.status === 'pending_payment' || b.status === 'confirmed') && (
-                          <button onClick={() => confirm(`Cancelar ${b.code}?`) && setBookings((bs) => bs.map((x) => (x.code === b.code ? { ...x, status: 'cancelled' } : x)))} className="rounded-lg px-2 py-1 text-xs text-red-700 ring-1 ring-red-200">Cancelar</button>
+                          <button onClick={() => {
+                              if (!confirm(`Cancelar ${b.code}?`)) return;
+                              if (live && b.id) run(() => cancelBooking(b.id!), 'Reserva cancelada.');
+                              else setBookings((bs) => bs.map((x) => (x.code === b.code ? { ...x, status: 'cancelled' } : x)));
+                            }} className="rounded-lg px-2 py-1 text-xs text-red-700 ring-1 ring-red-200">Cancelar</button>
                         )}
                       </td>
                     </tr>
@@ -261,7 +308,9 @@ export default function AdminDashboard({ today, property, bookings: initial, exp
                 onSubmit={(e) => {
                   e.preventDefault();
                   const f = new FormData(e.currentTarget);
-                  setExpenses((x) => [{ date: String(f.get('date')), category: String(f.get('category')), description: String(f.get('description')), amountCents: Math.round(+String(f.get('amount')) * 100) }, ...x]);
+                  const exp = { date: String(f.get('date')), category: String(f.get('category')), description: String(f.get('description')), amountCents: Math.round(+String(f.get('amount')) * 100) };
+                  if (live) run(() => addExpense(exp), 'Despesa lançada.');
+                  else setExpenses((x) => [exp, ...x]);
                   e.currentTarget.reset();
                 }}
               >

@@ -65,7 +65,7 @@ export function buildContract(q: Quote, p: PropertyConfig, tenant: ContractParty
         },
         {
           title: 'Das normas de convivência',
-          text: 'Silêncio das 22h às 8h, em respeito à vizinhança. Proibido som automotivo. Uso da piscina por menores somente com supervisão de adulto; a cerca de proteção deve permanecer fechada. Animais de estimação mediante consulta prévia.',
+          text: 'Silêncio das 22h às 8h, em respeito à vizinhança. Proibido som automotivo. Uso da piscina por menores somente com supervisão constante de adulto responsável. Animais de estimação mediante consulta prévia.',
         },
       ],
     };

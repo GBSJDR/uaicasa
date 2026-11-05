@@ -154,21 +154,40 @@ export default function CheckoutFlow({ params }: { params: Record<string, string
       <div className="grid gap-8 lg:grid-cols-[1.3fr_1fr]">
         <section className="rounded-3xl bg-white p-6 ring-1 ring-areia sm:p-8">
           {result.manualPayment ? (
-            <div className="text-center">
-              <p className="text-5xl">🏡</p>
-              <h1 className="mt-3 font-display text-3xl text-serra-escuro">Reserva pré-agendada!</h1>
-              <p className="mt-2 text-musgo">
-                Código <strong>{result.booking.code}</strong>. Suas datas estão seguradas por 24 horas. Envie a mensagem abaixo e
-                o anfitrião te manda o PIX de <strong>{brl(result.quote.amountDueNowCents)}</strong> pelo WhatsApp.
+            <div>
+              <h1 className="font-display text-2xl text-serra-escuro sm:text-3xl">Reserva pré-agendada! 🏡</h1>
+              <p className="mt-1 text-sm text-musgo">
+                Código <strong>{result.booking.code}</strong> • suas datas ficam seguradas por 24 horas.
               </p>
+              {result.pix ? (
+                <div className="mt-6 flex flex-col items-center gap-4 sm:flex-row sm:items-start">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={`data:image/png;base64,${result.pix.qrCodeBase64}`} alt="QR Code PIX" className="h-52 w-52 rounded-xl ring-1 ring-areia" />
+                  <div className="w-full">
+                    <p className="text-sm text-musgo">Sinal via PIX</p>
+                    <p className="font-display text-3xl">{brl(result.quote.amountDueNowCents)}</p>
+                    <div className="mt-3 break-all rounded-xl bg-creme p-3 font-mono text-[11px] text-musgo">{result.pix.copyPaste}</div>
+                    <button onClick={() => navigator.clipboard.writeText(result.pix?.copyPaste ?? '')} className="focus-ring mt-3 w-full rounded-xl bg-serra px-4 py-3 font-semibold text-white hover:bg-serra-escuro">
+                      Copiar código PIX
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <p className="mt-4 text-musgo">O anfitrião vai te enviar o PIX do sinal de <strong>{brl(result.quote.amountDueNowCents)}</strong> pelo WhatsApp.</p>
+              )}
               <a
-                href={waHref(`Olá! Fiz a pré-reserva ${result.booking.code} na UaiCasa (${when}, ${quote.guests} pessoas). Pode me enviar o PIX do sinal de ${brl(result.quote.amountDueNowCents)}?`)}
+                href={waHref(
+                  result.pix
+                    ? `Olá! Paguei o sinal de ${brl(result.quote.amountDueNowCents)} da reserva ${result.booking.code} na UaiCasa (${when}). Segue o comprovante:`
+                    : `Olá! Fiz a pré-reserva ${result.booking.code} na UaiCasa (${when}, ${quote.guests} pessoas). Pode me enviar o PIX do sinal de ${brl(result.quote.amountDueNowCents)}?`,
+                )}
                 target="_blank" rel="noopener"
-                className="mt-6 inline-block rounded-xl bg-emerald-600 px-6 py-3 font-semibold text-white"
+                className="mt-6 block rounded-xl bg-emerald-600 px-6 py-3 text-center font-semibold text-white"
               >
-                Pedir o PIX no WhatsApp
+                {result.pix ? 'Já paguei — enviar comprovante no WhatsApp' : 'Pedir o PIX no WhatsApp'}
               </a>
-              <p className="mt-6 text-[11px] text-musgo">Contrato {result.contract.version} aceito • SHA-256 {result.contract.sha256.slice(0, 16)}…</p>
+              <p className="mt-3 text-xs text-musgo">A reserva é confirmada assim que o anfitrião receber o comprovante.</p>
+              <p className="mt-4 text-[11px] text-musgo">Contrato {result.contract.version} aceito • SHA-256 {result.contract.sha256.slice(0, 16)}…</p>
             </div>
           ) : !result.pix ? null : paid ? (
             <div className="text-center">

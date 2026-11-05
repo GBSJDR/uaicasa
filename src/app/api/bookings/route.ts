@@ -12,6 +12,8 @@ import { quote } from '@/lib/domain/pricing';
 import { isValidCNPJ, isValidCPF, onlyDigits, parseBookingRequest } from '@/lib/domain/validation';
 import { buildContract, contractToText } from '@/lib/contracts/contract';
 import { hasRealGateway, paymentGateway } from '@/lib/payments/gateway';
+import { buildPixPayload, staticPixConfig } from '@/lib/payments/pixStatic';
+import QRCode from 'qrcode';
 
 const HOLD_MINUTES = 30;
 /** Sem gateway, o PIX é enviado manualmente pelo WhatsApp: segura a data por mais tempo. */
@@ -106,12 +108,20 @@ export async function POST(req: Request) {
   if (db && !hasRealGateway()) {
     const manualExpires = new Date(Date.now() + MANUAL_HOLD_HOURS * 3_600_000);
     await db.from('bookings').update({ expires_at: manualExpires.toISOString() }).eq('id', bookingId);
+    // Com chave PIX configurada: QR Code com valor exato e o código da reserva como identificador.
+    const cfg = staticPixConfig();
+    let pix = null;
+    if (cfg) {
+      const copyPaste = buildPixPayload({ ...cfg, amountCents: q.amountDueNowCents, txid: bookingCode });
+      const dataUrl = await QRCode.toDataURL(copyPaste, { margin: 1, width: 360 });
+      pix = { qrCodeBase64: dataUrl.split(',')[1], copyPaste, expiresAt: manualExpires.toISOString() };
+    }
     return NextResponse.json({
       demo: false,
       manualPayment: true,
       booking: { id: bookingId, code: bookingCode, expiresAt: manualExpires.toISOString() },
       contract: { version: contract.version, sha256: contractHash },
-      pix: null,
+      pix,
       quote: q,
     });
   }
