@@ -17,7 +17,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       <div className="w-full max-w-sm rounded-3xl bg-white p-8 shadow-xl ring-1 ring-areia">
         <Logo />
         <h1 className="mt-6 font-display text-2xl text-serra-escuro">Painel do anfitrião</h1>
-        <p className="mt-1 text-sm text-musgo">Digite seu e-mail e enviaremos um link de acesso. Sem senha.</p>
+        <p className="mt-1 text-sm text-musgo">Entre com seu e-mail e senha.</p>
         {erro && <p className="mt-4 rounded-xl bg-terra/10 p-3 text-sm text-terra-escuro">{ERRORS[erro] ?? 'Não foi possível entrar.'}</p>}
         <LoginForm />
       </div>

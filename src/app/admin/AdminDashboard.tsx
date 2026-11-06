@@ -111,9 +111,12 @@ export default function AdminDashboard({ live, userName, today, property, bookin
           <div className="flex items-center gap-3 text-xs text-musgo">
             <span className="hidden sm:block">{live ? `Olá, ${userName.split(' ')[0]}` : 'Protótipo • dados de demonstração'}</span>
             {live && (
+              <>
+              <a href="/admin/senha" className="rounded-lg px-2 py-1 ring-1 ring-areia hover:bg-areia">Trocar senha</a>
               <form action="/auth/sair" method="post">
                 <button className="rounded-lg px-2 py-1 ring-1 ring-areia hover:bg-areia">Sair</button>
               </form>
+              </>
             )}
           </div>
         </div>
