@@ -4,33 +4,45 @@ import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import type { OverrideRow, PricingAdmin, RuleRow, SettingsRow } from '@/lib/admin/pricing';
 import { addOverride, deleteOverride, saveRule, saveSettings } from './pricingActions';
+import { parseBR } from '@/lib/admin/parseBR';
 
 const brl = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const fmt = (d: string) => `${d.slice(8, 10)}/${d.slice(5, 7)}/${d.slice(0, 4)}`;
 const box = 'rounded-2xl bg-white p-5 ring-1 ring-areia';
 const inp = 'focus-ring mt-1 w-full rounded-lg border border-pedra/60 px-3 py-2 text-sm';
 
+const showBR = (v: number | null, money: boolean) =>
+  v == null ? '' : money ? v.toLocaleString('pt-BR', { minimumFractionDigits: v % 1 ? 2 : 0, maximumFractionDigits: 2 }) : String(v);
+
 function Num({ label, value, onChange, step = '0.01', prefix, hint, optional }: {
   label: string; value: number | null; onChange: (v: number | null) => void; step?: string; prefix?: string; hint?: string; optional?: boolean;
 }) {
+  const money = step !== '1';
+  const [txt, setTxt] = useState(showBR(value, money));
+  const parsed = parseBR(txt);
+  const invalid = Number.isNaN(parsed) || (!money && parsed != null && !Number.isInteger(parsed));
   return (
     <label className="block text-xs font-medium text-musgo">
       {label}
       <div className="relative">
         {prefix && <span className="pointer-events-none absolute left-3 top-1/2 mt-0.5 -translate-y-1/2 text-sm text-musgo">{prefix}</span>}
         <input
-          type="number" inputMode="decimal" step={step} min="0"
-          value={value ?? ''} placeholder={optional ? '—' : undefined}
-          onChange={(e) => onChange(e.target.value === '' ? null : Number(e.target.value))}
-          className={`${inp} ${prefix ? 'pl-9' : ''}`}
+          type="text" inputMode={money ? 'decimal' : 'numeric'}
+          value={txt} placeholder={optional ? '—' : undefined}
+          onChange={(e) => {
+            setTxt(e.target.value);
+            const n = parseBR(e.target.value);
+            onChange(n == null ? null : n);
+          }}
+          className={`${inp} ${prefix ? 'pl-9' : ''} ${invalid ? 'border-red-400 bg-red-50' : ''}`}
         />
       </div>
-      {hint && <span className="mt-0.5 block text-[11px] font-normal">{hint}</span>}
+      {invalid ? <span className="mt-0.5 block text-[11px] font-normal text-red-700">Valor inválido</span> : hint && <span className="mt-0.5 block text-[11px] font-normal">{hint}</span>}
     </label>
   );
 }
 
-function RuleCard({ rule, onSave }: { rule: RuleRow; onSave: (r: RuleRow) => void }) {
+function RuleCard({ rule, onSave, pending }: { rule: RuleRow; onSave: (r: RuleRow) => void; pending: boolean }) {
   const [r, setR] = useState(rule);
   const set = (k: keyof RuleRow) => (v: number | null) => setR((x) => ({ ...x, [k]: v }));
   const stay = r.mode === 'stay';
@@ -47,14 +59,14 @@ function RuleCard({ rule, onSave }: { rule: RuleRow; onSave: (r: RuleRow) => voi
         {!stay && <Num label="Hora extra" prefix="R$" value={r.extraHour} onChange={set('extraHour')} />}
         <Num label="Sinal no PIX (%)" step="1" value={r.percentNow} onChange={(v) => set('percentNow')(v ?? 50)} hint="Cobrado na reserva; o resto até a entrada" />
       </div>
-      <button onClick={() => onSave(r)} className={`mt-4 w-full rounded-xl px-4 py-2.5 text-sm font-semibold text-white ${stay ? 'bg-serra' : 'bg-terra'}`}>
-        Salvar {stay ? 'hospedagem' : 'eventos'}
+      <button disabled={pending} onClick={() => onSave(r)} className={`mt-4 w-full rounded-xl px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60 ${stay ? 'bg-serra' : 'bg-terra'}`}>
+        {pending ? 'Salvando…' : `Salvar ${stay ? 'hospedagem' : 'eventos'}`}
       </button>
     </section>
   );
 }
 
-function SettingsCard({ settings, onSave }: { settings: SettingsRow; onSave: (s: SettingsRow) => void }) {
+function SettingsCard({ settings, onSave, pending }: { settings: SettingsRow; onSave: (s: SettingsRow) => void; pending: boolean }) {
   const [s, setS] = useState(settings);
   const n = (k: keyof SettingsRow) => (v: number | null) => setS((x) => ({ ...x, [k]: v ?? 0 }));
   const t = (k: keyof SettingsRow, label: string) => (
@@ -77,14 +89,14 @@ function SettingsCard({ settings, onSave }: { settings: SettingsRow; onSave: (s:
         {t('eventEndTime', 'Festa termina')}
         {t('loudMusicUntil', 'Som alto até')}
       </div>
-      <button onClick={() => onSave(s)} className="mt-4 w-full rounded-xl bg-tinta px-4 py-2.5 text-sm font-semibold text-white">Salvar regras</button>
+      <button disabled={pending} onClick={() => onSave(s)} className="mt-4 w-full rounded-xl bg-tinta px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60">{pending ? 'Salvando…' : 'Salvar regras'}</button>
     </section>
   );
 }
 
 const EMPTY = { label: '', scope: 'stay' as 'stay' | 'event' | 'both', from: '', until: '', priceMode: 'fixed' as 'fixed' | 'percent' | 'none', price: null as number | null, percent: null as number | null, minNights: null as number | null, closedToArrival: false, eventsAllowed: true, priority: 10 };
 
-export default function PricingPanel({ data, run }: { data: PricingAdmin; run: (fn: () => Promise<{ ok: boolean; error?: string }>, msg: string) => void }) {
+export default function PricingPanel({ data, run, pending }: { data: PricingAdmin; run: (fn: () => Promise<{ ok: boolean; error?: string }>, msg: string, onOk?: () => void) => void; pending: boolean }) {
   const [f, setF] = useState<typeof EMPTY>(EMPTY);
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,15 +106,14 @@ export default function PricingPanel({ data, run }: { data: PricingAdmin; run: (
       multiplier: f.priceMode === 'percent' && f.percent != null ? Math.round((1 + f.percent / 100) * 100) / 100 : null,
       minNights: f.scope === 'event' ? null : f.minNights, closedToArrival: f.closedToArrival, eventsAllowed: f.eventsAllowed, priority: f.priority,
     };
-    run(() => addOverride(data.settings.id, o), 'Data especial salva.');
-    setF(EMPTY);
+    run(() => addOverride(data.settings.id, o), '✓ Data especial salva.', () => setF(EMPTY));
   };
 
   return (
     <div className="space-y-6">
       <div className="grid gap-6 lg:grid-cols-3">
-        {data.rules.map((r) => <RuleCard key={r.id} rule={r} onSave={(x) => run(() => saveRule(x), 'Tarifas salvas — o site já usa os novos valores.')} />)}
-        <SettingsCard settings={data.settings} onSave={(s) => run(() => saveSettings(s), 'Regras da casa salvas.')} />
+        {data.rules.map((r) => <RuleCard key={r.id} rule={r} pending={pending} onSave={(x) => run(() => saveRule(x), '✓ Tarifas salvas — o site já usa os novos valores.')} />)}
+        <SettingsCard settings={data.settings} pending={pending} onSave={(s) => run(() => saveSettings(s), '✓ Regras da casa salvas.')} />
       </div>
 
       <section className={box}>
@@ -146,7 +157,7 @@ export default function PricingPanel({ data, run }: { data: PricingAdmin; run: (
               <label className="flex items-center gap-2"><input type="checkbox" checked={!f.eventsAllowed} onChange={(e) => setF({ ...f, eventsAllowed: !e.target.checked })} /> Não alugar para festas nesses dias</label>
             )}
           </div>
-          <button className="rounded-xl bg-serra px-4 py-2.5 text-sm font-semibold text-white sm:col-span-6">+ Adicionar data especial</button>
+          <button disabled={pending} className="rounded-xl bg-serra px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60 sm:col-span-6">{pending ? 'Salvando…' : '+ Adicionar data especial'}</button>
         </form>
 
         <div className="mt-4 overflow-x-auto">

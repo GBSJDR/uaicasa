@@ -58,11 +58,20 @@ export default function AdminDashboard({ live, userName, pricing, today, propert
   const [pending, startTransition] = useTransition();
   const [flash, setFlash] = useState<string | null>(null);
   /** Executa uma ação no servidor (modo real) e recarrega os dados. */
-  const run = (fn: () => Promise<{ ok: boolean; error?: string }>, okMsg: string) =>
+  const run = (fn: () => Promise<{ ok: boolean; error?: string }>, okMsg: string, onOk?: () => void) =>
     startTransition(async () => {
-      const r = await fn();
-      setFlash(r.ok ? okMsg : (r as { error: string }).error);
-      if (r.ok) router.refresh();
+      let r: { ok: boolean; error?: string };
+      try {
+        r = await fn();
+      } catch {
+        r = { ok: false, error: 'Não foi possível salvar. Verifique a internet ou entre de novo no painel.' };
+      }
+      setFlash(r.ok ? okMsg : r.error ?? 'Erro ao salvar.');
+      if (r.ok) {
+        onOk?.();
+        router.refresh();
+        setTimeout(() => setFlash((f) => (f === okMsg ? null : f)), 4000);
+      }
     });
   const [tab, setTab] = useState<(typeof TABS)[number]>('Visão geral');
   const [localBookings, setBookings] = useState(initial);
@@ -133,10 +142,12 @@ export default function AdminDashboard({ live, userName, pricing, today, propert
       </header>
 
       <main className="mx-auto max-w-7xl space-y-6 px-4 py-6">
-        {flash && (
-          <div className="flex items-center justify-between rounded-xl bg-serra/10 px-4 py-2 text-sm text-serra-escuro">
+        {(flash || pending) && (
+          <div role="status" className={`fixed inset-x-4 bottom-4 z-50 mx-auto flex max-w-md items-center justify-between gap-3 rounded-2xl px-4 py-3 text-sm font-medium shadow-2xl ${
+            pending ? 'bg-tinta text-white' : flash?.startsWith('✓') || /salv|criad|registrad|cancelad|lançad|exclu/i.test(flash ?? '') ? 'bg-serra text-white' : 'bg-red-600 text-white'
+          }`}>
             <span>{pending ? 'Salvando…' : flash}</span>
-            <button onClick={() => setFlash(null)} aria-label="Fechar">×</button>
+            {!pending && <button onClick={() => setFlash(null)} aria-label="Fechar" className="text-lg leading-none">×</button>}
           </div>
         )}
         {tab === 'Visão geral' && (
@@ -342,7 +353,7 @@ export default function AdminDashboard({ live, userName, pricing, today, propert
           </div>
         )}
 
-        {tab === 'Preços' && live && pricing && <PricingPanel data={pricing} run={run} />}
+        {tab === 'Preços' && live && pricing && <PricingPanel data={pricing} run={run} pending={pending} />}
         {tab === 'Preços' && !(live && pricing) && (
           <section className="rounded-2xl bg-white p-5 ring-1 ring-areia">
             <h2 className="font-display text-lg">Datas especiais (sobrescritas)</h2>
