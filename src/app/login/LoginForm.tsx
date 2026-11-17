@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabaseBrowser } from '@/lib/supabase/browser';
+import PasswordInput from '@/components/PasswordInput';
 
 export default function LoginForm() {
   const router = useRouter();
@@ -65,7 +66,7 @@ export default function LoginForm() {
   return (
     <form onSubmit={login} className="mt-6 space-y-3">
       <input type="email" required autoComplete="username" placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} className={input} />
-      <input type="password" required autoComplete="current-password" placeholder="Senha" value={password} onChange={(e) => setPassword(e.target.value)} className={input} />
+      <PasswordInput required autoComplete="current-password" placeholder="Senha" value={password} onChange={(e) => setPassword(e.target.value)} className={input} />
       {error && <p className="text-sm text-terra-escuro">{error}</p>}
       <button disabled={state === 'busy'} className="focus-ring w-full rounded-xl bg-serra px-4 py-3 font-semibold text-white hover:bg-serra-escuro disabled:opacity-50">
         {state === 'busy' ? 'Entrando…' : 'Entrar'}

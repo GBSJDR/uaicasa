@@ -6,10 +6,9 @@ import { useEffect, useMemo, useState } from 'react';
 import QuoteSummary from '@/components/QuoteSummary';
 import { waHref } from '@/components/SiteHeader';
 import { buildContract } from '@/lib/contracts/contract';
-import { PROPERTY } from '@/lib/data/demo';
 import { formatBR } from '@/lib/domain/dates';
 import { brl } from '@/lib/domain/pricing';
-import type { Quote } from '@/lib/domain/types';
+import type { PropertyConfig, Quote } from '@/lib/domain/types';
 
 interface BookingResult {
   demo: boolean;
@@ -41,7 +40,7 @@ function Field(props: React.InputHTMLAttributes<HTMLInputElement> & { label: str
   );
 }
 
-export default function CheckoutFlow({ params }: { params: Record<string, string> }) {
+export default function CheckoutFlow({ params, property: PROPERTY }: { params: Record<string, string>; property: PropertyConfig }) {
   const request = useMemo(
     () =>
       params.mode === 'event'

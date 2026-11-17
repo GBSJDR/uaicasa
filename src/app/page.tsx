@@ -3,7 +3,8 @@ import BookingWidget from '@/components/BookingWidget';
 import Gallery from '@/components/Gallery';
 import SiteHeader, { Logo, waHref } from '@/components/SiteHeader';
 import { brl } from '@/lib/domain/pricing';
-import { PROPERTY, RULES } from '@/lib/data/demo';
+import { loadPricingContext } from '@/lib/data/repository';
+import type { PropertyConfig } from '@/lib/domain/types';
 
 const STAY_FEATURES = [
   ['🛏️', 'Suítes com ar-condicionado', 'Janelas panorâmicas para os ciprestes e a serra'],
@@ -14,7 +15,7 @@ const STAY_FEATURES = [
   ['☀️', 'Energia solar', 'Casa sustentável, com fibra óptica'],
 ];
 
-const EVENT_FEATURES = [
+const eventFeatures = (PROPERTY: PropertyConfig) => [
   `Até ${PROPERTY.maxGuestsEvent} convidados`,
   'Área coberta com muro de pedra e iluminação',
   'Mesas e cadeiras incluídas',
@@ -25,7 +26,12 @@ const EVENT_FEATURES = [
 
 const ADDRESS_Q = encodeURIComponent('Rua João Paulo II, 2, Colônia do Marçal, São João del-Rei - MG');
 
-export default function Home() {
+// Atualiza a página a cada 5 min (e na hora, quando os preços são salvos no painel)
+export const revalidate = 300;
+
+export default async function Home() {
+  const { property: PROPERTY, rules: RULES } = await loadPricingContext();
+  const EVENT_FEATURES = eventFeatures(PROPERTY);
   return (
     <main>
       {/* HERO */}

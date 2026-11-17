@@ -4,6 +4,7 @@ import { OVERRIDES, PROPERTY, demoBookings, demoExpenses, demoHolds } from '@/li
 import { isDemoMode } from '@/lib/data/repository';
 import { requireAdmin } from '@/lib/admin/auth';
 import { loadAdminData } from '@/lib/admin/data';
+import { loadPricingAdmin } from '@/lib/admin/pricing';
 import { todayInSaoPaulo } from '@/lib/domain/dates';
 
 export const metadata: Metadata = { title: 'Painel — UaiCasa', robots: { index: false } };
@@ -18,6 +19,6 @@ export default async function AdminPage() {
     );
   }
   const user = await requireAdmin();
-  const data = await loadAdminData();
-  return <AdminDashboard live userName={user.name} {...data} />;
+  const [data, pricing] = await Promise.all([loadAdminData(), loadPricingAdmin()]);
+  return <AdminDashboard live userName={user.name} pricing={pricing} {...data} />;
 }

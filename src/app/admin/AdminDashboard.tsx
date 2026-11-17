@@ -4,6 +4,8 @@ import { useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { addExpense, addManualBooking, cancelBooking, registerPayment } from './actions';
 import type { AdminBooking } from '@/lib/admin/data';
+import type { PricingAdmin } from '@/lib/admin/pricing';
+import PricingPanel from './PricingPanel';
 import { Logo } from '@/components/SiteHeader';
 import type { DemoExpense } from '@/lib/data/demo';
 import { dailyAvailability } from '@/lib/domain/availability';
@@ -15,6 +17,7 @@ import { TEMPLATE_LABELS, renderTemplate, waLink, type TemplateKey } from '@/lib
 interface Props {
   live: boolean;
   userName: string;
+  pricing?: PricingAdmin | null;
   today: ISODate;
   property: PropertyConfig;
   bookings: AdminBooking[];
@@ -50,7 +53,7 @@ function Kpi({ label, value, hint, tone = 'serra' }: { label: string; value: str
   );
 }
 
-export default function AdminDashboard({ live, userName, today, property, bookings: initial, expenses: initialExp, holds, overrides }: Props) {
+export default function AdminDashboard({ live, userName, pricing, today, property, bookings: initial, expenses: initialExp, holds, overrides }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [flash, setFlash] = useState<string | null>(null);
@@ -339,7 +342,8 @@ export default function AdminDashboard({ live, userName, today, property, bookin
           </div>
         )}
 
-        {tab === 'Preços' && (
+        {tab === 'Preços' && live && pricing && <PricingPanel data={pricing} run={run} />}
+        {tab === 'Preços' && !(live && pricing) && (
           <section className="rounded-2xl bg-white p-5 ring-1 ring-areia">
             <h2 className="font-display text-lg">Datas especiais (sobrescritas)</h2>
             <div className="mt-3 overflow-x-auto">

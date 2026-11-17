@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabaseBrowser } from '@/lib/supabase/browser';
+import PasswordInput from '@/components/PasswordInput';
 
 export default function PasswordForm() {
   const router = useRouter();
@@ -26,8 +27,8 @@ export default function PasswordForm() {
   const input = 'focus-ring w-full rounded-xl border border-pedra/60 px-4 py-3';
   return (
     <form onSubmit={submit} className="mt-6 space-y-3">
-      <input type="password" required autoComplete="new-password" placeholder="Nova senha (mín. 8 caracteres)" value={p1} onChange={(e) => setP1(e.target.value)} className={input} />
-      <input type="password" required autoComplete="new-password" placeholder="Repita a senha" value={p2} onChange={(e) => setP2(e.target.value)} className={input} />
+      <PasswordInput required autoComplete="new-password" placeholder="Nova senha (mín. 8 caracteres)" value={p1} onChange={(e) => setP1(e.target.value)} className={input} />
+      <PasswordInput required autoComplete="new-password" placeholder="Repita a senha" value={p2} onChange={(e) => setP2(e.target.value)} className={input} />
       {error && <p className="text-sm text-terra-escuro">{error}</p>}
       <button disabled={busy} className="focus-ring w-full rounded-xl bg-serra px-4 py-3 font-semibold text-white disabled:opacity-50">
         {busy ? 'Salvando…' : 'Salvar senha e entrar'}
